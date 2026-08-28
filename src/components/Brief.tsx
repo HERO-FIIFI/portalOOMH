@@ -46,7 +46,7 @@ export function Challenge() {
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="reveal lg:col-span-7">
             <p className="text-xl leading-relaxed text-cream sm:text-2xl">
-              Are you an SHS student ready to showcase your talent? Enter{" "}
+              Are you an SHS student <span className="bg-gold px-1.5 font-extrabold text-ink">or graduate</span> ready to showcase your talent? Enter{" "}
               <span className="bg-gold px-1.5 font-extrabold text-ink">individually</span>, as a{" "}
               <span className="bg-gold px-1.5 font-extrabold text-ink">duo</span>, or as a{" "}
               <span className="bg-gold px-1.5 font-extrabold text-ink">group</span> and create an
@@ -99,8 +99,8 @@ export function Challenge() {
               {[
                 ["2:00", "MAX RUNTIME"],
                 ["1", "OFFICIAL SOUND"],
-                ["TOP 10", "FINALISTS"],
-                ["100%", "SHS STUDENTS"],
+                ["TOP 16", "FINALISTS"],
+                ["100%", "STUDENTS & GRADS"],
               ].map(([big, small]) => (
                 <div key={small} className="group bg-coal px-4 py-5 transition-colors hover:bg-bark">
                   <p className="display text-3xl text-gold transition-transform group-hover:-translate-y-0.5">
@@ -191,7 +191,7 @@ export function HowItWorks() {
         </div>
 
         <p className="reveal display mt-10 text-center text-2xl text-cream sm:text-4xl">
-          🌟 SCREENED → TOP 10 → <span className="text-gold">SCHOOL VISITS</span> → PUBLIC VOTING
+          🌟 SCREENED → TOP 16 → <span className="text-gold">SCHOOL VISITS</span> → PUBLIC VOTING
         </p>
       </div>
     </section>

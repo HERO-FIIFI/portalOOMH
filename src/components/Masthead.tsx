@@ -193,7 +193,7 @@ export function Masthead() {
             {[
               ["OFFICIAL SONG", "“Oil On My Head”"],
               ["ARTIST", "Eben"],
-              ["WHO ENTERS", "SHS 1 · 2 · 3"],
+              ["WHO ENTERS", "Students & Grads"],
               ["FORMAT", "Solo · Duo · Group"],
             ].map(([k, v], i) => (
               <div

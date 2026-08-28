@@ -14,7 +14,7 @@ import {
 /* ================= types ================= */
 
 type EntryType = "" | "Individual" | "Duo" | "Group";
-type FormLevel = "" | "SHS 1" | "SHS 2" | "SHS 3";
+type FormLevel = "" | "SHS 1" | "SHS 2" | "SHS 3" | "Graduate";
 type AgeGroup = "" | "under18" | "over18";
 
 interface FormState {
@@ -576,7 +576,7 @@ export function Portal() {
       e.email = "That email doesn't look right.";
     if (!form.school.trim()) e.school = "Enter your SHS name.";
     if (!form.location.trim()) e.location = "Where is your school? Town & region.";
-    if (!form.form) e.form = "Select your current form.";
+    if (!form.form) e.form = "Select your current form — or Graduate.";
     if (form.entryType !== "Individual" && form.entryType !== "" && !form.otherNames.trim())
       e.otherNames = `List the other ${form.entryType === "Duo" ? "member" : "members"} of your ${form.entryType.toLowerCase()}.`;
     if (!video && !form.videoLink.trim())
@@ -854,9 +854,9 @@ export function Portal() {
                         <Err msg={errors.location} />
                       </div>
                       <div>
-                        <Label req>CURRENT FORM</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {(["SHS 1", "SHS 2", "SHS 3"] as const).map((f) => {
+                        <Label req>CURRENT FORM / STATUS</Label>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          {(["SHS 1", "SHS 2", "SHS 3", "Graduate"] as const).map((f) => {
                             const active = form.form === f;
                             return (
                               <button
@@ -1004,7 +1004,7 @@ export function Portal() {
                   <div className="space-y-4">
                     {(
                       [
-                        ["decl1", "I confirm that all information provided is correct and all participants are eligible SHS students."],
+                        ["decl1", "I confirm that all information provided is correct and all participants are eligible SHS students or graduates."],
                         ["decl2", "I have the required parent/guardian consent where applicable."],
                         ["decl3", "I agree to the Official Rules & Terms and consent to the use of my submitted video for the competition and related Prayer Hour publicity."],
                       ] as const

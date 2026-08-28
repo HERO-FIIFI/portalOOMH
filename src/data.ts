@@ -10,7 +10,7 @@ export const VIDEO_RULES = [
   "Maximum 2 minutes",
   "Must use Eben's “Oil On My Head” soundtrack",
   "Individual, duo, or group entries accepted",
-  "All participants must be SHS students",
+  "All participants must be SHS students or graduates",
   "Clear audio and video",
   "Appropriate for public viewing",
 ];
@@ -23,8 +23,8 @@ export const PIPELINE = [
   },
   {
     n: "02",
-    title: "Screening → Top 10",
-    body: "The Prayer Hour Team screens every entry and selects the Top 10 Finalists based on talent, creativity and sound.",
+    title: "Screening → Top 16",
+    body: "The Prayer Hour Team screens every entry and selects the Top 16 Finalists based on talent, creativity and sound.",
   },
   {
     n: "03",
@@ -41,7 +41,7 @@ export const PIPELINE = [
 export const FAQ = [
   {
     q: "Who can enter?",
-    a: "Any student currently in SHS 1, 2 or 3 — as an individual, a duo, or a group. Everyone in the video must be an SHS student.",
+    a: "Any SHS student (SHS 1, 2 or 3) or graduate — as an individual, a duo, or a group. Everyone in the video must be an SHS student or graduate.",
   },
   {
     q: "Which soundtrack do I use?",
