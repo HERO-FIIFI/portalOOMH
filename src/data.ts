@@ -4,6 +4,7 @@ export const SOCIALS = [
   { id: "tiktok", label: "TikTok — @PrayerHour", url: "https://www.tiktok.com/@prayerhour" },
   { id: "instagram", label: "Instagram Reels — @PrayerHour", url: "https://www.instagram.com/prayerhour" },
   { id: "youtube", label: "YouTube — Prayer Hour", url: "https://www.youtube.com/@PrayerHour" },
+  { id: "facebook", label: "Facebook — Prayer Hour", url: "https://www.facebook.com/PrayerHour" },
   { id: "whatsapp", label: "WhatsApp Community", url: "https://chat.whatsapp.com/PrayerHourOilOnMyHead" },
   { id: "telegram", label: "Telegram Channel", url: "https://t.me/prayerhour" },
 ] as const;

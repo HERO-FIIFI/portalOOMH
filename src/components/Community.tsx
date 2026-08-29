@@ -38,6 +38,12 @@ export function PlatformIcon({ id, size = 18 }: { id: SocialId; size?: number })
           <path d="M21.9 4.1 2.9 11.4c-.9.4-.9 1.6 0 1.9l4.9 1.6 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.7.1 1.9-.7l3-15.9c.2-1-.7-1.7-2-1.3zM9.4 14.2l8.6-7.7-6.7 8.7-.3 3z" />
         </svg>
       );
+    case "facebook":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z" />
+        </svg>
+      );
   }
 }
 
@@ -230,6 +236,14 @@ export function FollowChallenge() {
             desc="Watch full performance clips and complete Prayer Hour broadcasts."
             url={SOCIALS[2].url}
             cta="WATCH"
+          />
+          <ChannelRow
+            icon={<PlatformIcon id="facebook" size={24} />}
+            name="Facebook"
+            handle="Prayer Hour"
+            desc="Community updates, photos and event announcements from the team."
+            url={SOCIALS[3].url}
+            cta="FOLLOW"
           />
 
           {/* real-time alert channels */}
