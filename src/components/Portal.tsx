@@ -4,6 +4,8 @@ import { useLocalStorage } from "../hooks";
 import {
   APPS_SCRIPT_CODE,
   ENTRIES_KEY,
+  ORGANISER_PASSKEY,
+  UNLOCK_KEY,
   URL_STORAGE_KEY,
   makeRefCode,
   submitEntry,
@@ -203,8 +205,10 @@ function UploadZone({
         return;
       }
       const sizeMB = f.size / (1024 * 1024);
-      if (sizeMB > 250) {
-        setLocalErr("File is over 250MB. Compress it, or paste a Drive/YouTube link below instead.");
+      if (sizeMB > 100) {
+        setLocalErr(
+          "File is over the 100MB limit. Compress it to under 100MB — or paste a Drive/YouTube link below instead.",
+        );
         return;
       }
       setChecking(true);
@@ -275,7 +279,11 @@ function UploadZone({
               <p className="display text-xl text-cream">
                 DRAG YOUR VIDEO HERE <span className="text-gold">OR TAP TO BROWSE</span>
               </p>
-              <p className="text-xs text-parch/60">MP4 · MOV · WEBM — up to 250MB, max 2:00 runtime</p>
+              <p className="text-xs text-parch/60">
+                Accepted: <span className="text-parch">.mp4 · .mov</span> (also .webm / .m4v) — max{" "}
+                <span className="text-parch">100 MB</span>, max runtime{" "}
+                <span className="text-parch">2:00</span>
+              </p>
             </>
           )}
         </button>
@@ -284,7 +292,7 @@ function UploadZone({
       <input
         ref={inputRef}
         type="file"
-        accept="video/*"
+        accept=".mp4,.mov,.m4v,.webm,video/mp4,video/quicktime,video/webm,video/*"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -348,6 +356,43 @@ function DriveConnectPanel() {
   const [url, setUrl] = useLocalStorage(URL_STORAGE_KEY);
   const [draft, setDraft] = useState(url);
   const [copied, setCopied] = useState(false);
+
+  /* passkey gate — keeps participants out of the Drive settings */
+  const [unlocked, setUnlocked] = useState<boolean>(() => {
+    try {
+      return window.sessionStorage.getItem(UNLOCK_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [pass, setPass] = useState("");
+  const [wrong, setWrong] = useState(false);
+
+  const tryUnlock = () => {
+    if (pass.trim().toLowerCase() === ORGANISER_PASSKEY.toLowerCase()) {
+      setUnlocked(true);
+      setWrong(false);
+      setPass("");
+      try {
+        window.sessionStorage.setItem(UNLOCK_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    } else {
+      setWrong(true);
+      setPass("");
+    }
+  };
+
+  const lockAgain = () => {
+    setUnlocked(false);
+    setWrong(false);
+    try {
+      window.sessionStorage.removeItem(UNLOCK_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
   const connected = /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec\/?$/.test(url);
 
   const copyCode = async () => {
@@ -385,12 +430,13 @@ function DriveConnectPanel() {
         </span>
       </summary>
 
+      {unlocked ? (
       <div className="space-y-6 border-t-2 border-line px-5 py-6">
         <ol className="grid gap-5 text-sm leading-relaxed text-parch/85 md:grid-cols-3">
           {[
             ["1 · CREATE THE INTAKE", "In Google Drive make a folder for videos and a Sheet for entries. Open script.google.com, paste the script below, and put both IDs inside it."],
             ["2 · DEPLOY AS WEB APP", "Deploy → New deployment → Web app. Execute as “Me”, access “Anyone”. Copy the /exec URL it gives you."],
-            ["3 · PASTE THE URL HERE", "Save it below on any device that runs this portal. Every submission now lands in your Drive folder + Sheet automatically."],
+            ["3 · PASTE THE URL HERE", "Save it below on any device that runs this portal. Every submission lands in your Drive folder + Sheet, and the script emails a confirmation to each participant automatically."],
           ].map(([t, b]) => (
             <li key={t} className="border-l-2 border-gold pl-4">
               <p className="display text-sm text-gold">{t}</p>
@@ -437,7 +483,70 @@ function DriveConnectPanel() {
             {APPS_SCRIPT_CODE}
           </pre>
         </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+          <p className="text-[11px] text-parch/50">
+            Unlocked for this session — the panel locks itself again in a new browser tab.
+          </p>
+          <button
+            type="button"
+            onClick={lockAgain}
+            className="border border-line px-3 py-1.5 text-[11px] font-bold tracking-wider text-parch transition-colors hover:border-ember hover:text-ember"
+          >
+            LOCK PANEL
+          </button>
+        </div>
       </div>
+      ) : (
+      <div className="border-t-2 border-line px-5 py-12">
+        <div
+          className={`mx-auto max-w-md border-2 border-dashed border-line bg-coal/70 p-7 text-center ${
+            wrong ? "shake" : ""
+          }`}
+        >
+          <span className="mx-auto grid h-12 w-12 place-items-center border-2 border-gold/70 text-gold">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="4.5" y="10.5" width="15" height="9.5" />
+              <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+              <circle cx="12" cy="15" r="1.6" fill="currentColor" />
+            </svg>
+          </span>
+          <p className="display mt-4 text-2xl text-cream">ORGANISERS ONLY</p>
+          <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-parch/65">
+            This panel controls where every submission is stored. Enter the Prayer Hour team
+            passkey to view or edit the Drive connection.
+          </p>
+          <div className="mx-auto mt-5 flex max-w-xs flex-col gap-2">
+            <input
+              type="password"
+              className="field text-center font-mono tracking-widest"
+              placeholder="Team passkey"
+              value={pass}
+              onChange={(e) => {
+                setPass(e.target.value);
+                setWrong(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") tryUnlock();
+              }}
+              aria-label="Organiser passkey"
+            />
+            <button
+              type="button"
+              onClick={tryUnlock}
+              className="display border-2 border-gold bg-gold px-4 py-2.5 text-sm text-ink transition-colors hover:bg-amber"
+            >
+              UNLOCK PANEL
+            </button>
+          </div>
+          {wrong && (
+            <p className="mt-3 text-xs font-bold text-ember">
+              Wrong passkey — this area is reserved for the Prayer Hour team.
+            </p>
+          )}
+        </div>
+      </div>
+      )}
     </details>
   );
 }
@@ -470,6 +579,40 @@ function SuccessScreen({
         Keep your reference code safe — you'll need it for any enquiries.
       </p>
 
+      {/* how finalists are notified */}
+      <div className="mx-auto mt-8 max-w-2xl border-2 border-gold/60 bg-ink p-5 text-left">
+        <p className="display flex items-center gap-2 text-lg text-gold">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2a7 7 0 0 0-7 7v4l-2 3v1h18v-1l-2-3V9a7 7 0 0 0-7-7z" />
+            <path d="M9.5 19a2.5 2.5 0 0 0 5 0" />
+          </svg>
+          HOW FINALISTS GET NOTIFIED
+        </p>
+        <ul className="mt-3 space-y-2 text-sm leading-relaxed text-parch/85">
+          <li className="flex gap-2.5">
+            <span className="mt-1.5 h-1.5 w-1.5 flex-none bg-gold" />
+            All entries are screened by the Prayer Hour Team and the <span className="font-bold text-cream">Top 16 Finalists</span> selected.
+          </li>
+          <li className="flex gap-2.5">
+            <span className="mt-1.5 h-1.5 w-1.5 flex-none bg-gold" />
+            Finalists are contacted on the <span className="font-bold text-cream">phone / WhatsApp number</span> you provided{payload.email ? ` — and by email at ${payload.email}` : " (add an email on future entries for extra reach)"}.
+          </li>
+          <li className="flex gap-2.5">
+            <span className="mt-1.5 h-1.5 w-1.5 flex-none bg-gold" />
+            The team then <span className="font-bold text-cream">visits each finalist at their school</span> before the videos are released for public voting.
+          </li>
+        </ul>
+      </div>
+
+      {!result.demo && payload.email && (
+        <p className="mt-4 text-xs text-parch/60">
+          ✉ A confirmation email is on its way to <span className="font-bold text-parch">{payload.email}</span>
+          {payload.ageGroup === "Under 18" && payload.guardianPhone
+            ? " — the team may also call the parent/guardian number on file."
+            : "."}
+        </p>
+      )}
+
       <div className="mx-auto mt-8 inline-block border-2 border-dashed border-gold bg-ink px-8 py-5">
         <p className="text-[10px] font-bold tracking-[0.3em] text-parch/60">REFERENCE CODE</p>
         <p className="display mt-1 text-4xl tracking-wider text-gold sm:text-5xl">{payload.refCode}</p>
@@ -492,8 +635,10 @@ function SuccessScreen({
       <div className="mx-auto mt-10 grid max-w-2xl gap-px border-2 border-line bg-line text-left text-sm sm:grid-cols-2">
         {[
           ["ENTRY TYPE", payload.entryType],
+          ["FORM / STATUS", payload.form],
           ["SCHOOL", payload.school],
-          ["FORM", payload.form],
+          ["PHONE / WHATSAPP", payload.phone],
+          ["EMAIL", payload.email || "—"],
           ["VIDEO", payload.fileName ? `${payload.fileName} (${payload.fileSizeMB} MB · ${payload.duration})` : payload.videoLink],
         ].map(([k, v]) => (
           <div key={k} className="bg-ink px-4 py-3">
@@ -574,7 +719,7 @@ export function Portal() {
       e.phone = "Enter a valid phone / WhatsApp number.";
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       e.email = "That email doesn't look right.";
-    if (!form.school.trim()) e.school = "Enter your SHS name.";
+    if (!form.school.trim()) e.school = "Enter the SHS you attend — or graduated from.";
     if (!form.location.trim()) e.location = "Where is your school? Town & region.";
     if (!form.form) e.form = "Select your current form — or Graduate.";
     if (form.entryType !== "Individual" && form.entryType !== "" && !form.otherNames.trim())
@@ -828,10 +973,10 @@ export function Portal() {
                         <Err msg={errors.email} />
                       </div>
                       <div>
-                        <Label req>NAME OF SHS</Label>
+                        <Label req>NAME OF SHS ATTENDED / GRADUATED FROM</Label>
                         <input
                           className={`field ${errors.school ? "has-error" : ""}`}
-                          placeholder="e.g. Prempeh College"
+                          placeholder="e.g. Prempeh College — current school or alma mater"
                           value={form.school}
                           onChange={(e) => set("school", e.target.value)}
                         />
@@ -909,8 +1054,8 @@ export function Portal() {
                         })
                       }
                     />
-                    <div className="border-2 border-dashed border-line bg-ink/60 p-4">
-                      <Label>FILE TOO BIG? PASTE A LINK INSTEAD</Label>
+                    <div className="border-2 border-dashed border-amber/60 bg-ink/60 p-4">
+                      <Label>UPLOAD FAILED, FILE TOO BIG, OR SLOW NETWORK? PASTE A LINK INSTEAD</Label>
                       <input
                         className={`field font-mono text-[13px] ${errors.videoLink ? "has-error" : ""}`}
                         placeholder="https://drive.google.com/… or https://youtu.be/…"
@@ -926,9 +1071,12 @@ export function Portal() {
                         }}
                       />
                       <Err msg={errors.videoLink} />
-                      <p className="mt-2 text-xs text-parch/55">
-                        Upload to your own Drive (anyone with link) or YouTube (unlisted), then paste
-                        the share link. A link or a file is required — one of the two.
+                      <p className="mt-2 text-xs leading-relaxed text-parch/55">
+                        No stress — upload the video to your own{" "}
+                        <span className="text-parch">Google Drive (share: “Anyone with the link”)</span>{" "}
+                        or <span className="text-parch">YouTube (Unlisted)</span>, then paste the share
+                        link above. A link counts exactly the same as a direct upload — but you must
+                        provide either a file or a link.
                       </p>
                     </div>
                   </div>

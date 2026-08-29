@@ -13,12 +13,17 @@
 export const URL_STORAGE_KEY = "ph_apps_script_url";
 export const ENTRIES_KEY = "ph_local_entries";
 
+/** Simple passkey protecting the organisers panel. Change it freely here. */
+export const ORGANISER_PASSKEY = "prayerhour";
+export const UNLOCK_KEY = "ph_org_unlocked";
+
 /** The exact script the organisers paste into script.google.com */
 export const APPS_SCRIPT_CODE = `/** PRAYER HOUR — Oil On My Head Challenge · Drive intake
  *  1) Create a folder in Google Drive for videos, copy its ID from the URL.
  *  2) Create a Google Sheet for entries, copy its ID from the URL.
  *  3) Paste both IDs below, Deploy → New deployment → Web app
- *     (Execute as: Me · Access: Anyone). Copy the /exec URL into the portal. */
+ *     (Execute as: Me · Access: Anyone). Copy the /exec URL into the portal.
+ *  4) Each participant gets an automatic confirmation email (MailApp). */
 
 var FOLDER_ID = "PASTE_YOUR_DRIVE_FOLDER_ID";
 var SHEET_ID  = "PASTE_YOUR_GOOGLE_SHEET_ID";
@@ -50,6 +55,31 @@ function doPost(e) {
       p.guardianName, p.guardianPhone, p.videoLink || "(file attached)", videoUrl
     ];
     sheet.getActiveSheet().appendRow(row);
+
+    /* Confirmation email to the participant (fails silently — never blocks the entry). */
+    try {
+      if (p.email) {
+        var guardianLine = (p.ageGroup === "Under 18")
+          ? "<p>Parent/guardian on file: <b>" + (p.guardianName || "") + "</b> · " + (p.guardianPhone || "") +
+            " — the team may call this number to confirm consent.</p>"
+          : "";
+        MailApp.sendEmail({
+          to: p.email,
+          name: "Prayer Hour",
+          subject: "Entry received — Oil On My Head Challenge (" + p.refCode + ")",
+          htmlBody:
+            "<div style='font-family:Arial,sans-serif;color:#222'>" +
+            "<h2 style='color:#c97f0a'>The oil is on your head! 🔥</h2>" +
+            "<p>Hi <b>" + (p.leadName || "champion") + "</b>,</p>" +
+            "<p>Your <b>Oil On My Head Challenge</b> entry has been received. Thank you!</p>" +
+            "<p>Reference code: <b>" + p.refCode + "</b> — quote it in any enquiry.</p>" +
+            guardianLine +
+            "<p>All entries are screened and the <b>Top 16 Finalists</b> will be contacted on the phone/WhatsApp number you provided before the team's school visits and public voting.</p>" +
+            "<p>— The Prayer Hour Team</p>" +
+            "</div>"
+        });
+      }
+    } catch (mailErr) { /* keep the submission successful even if email fails */ }
 
     return json_({ ok: true, refCode: p.refCode, videoUrl: videoUrl });
   } catch (err) {

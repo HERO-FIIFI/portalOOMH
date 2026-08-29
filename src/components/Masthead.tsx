@@ -181,8 +181,8 @@ export function Masthead() {
           </div>
 
           <p className="reveal mt-2 max-w-xl text-base leading-relaxed text-parch sm:text-lg">
-            The <span className="font-bold text-cream">SHS talent challenge</span> is
-            live. Perform to Eben's official soundtrack, film{" "}
+            The <span className="font-bold text-cream">SHS &amp; graduate talent challenge</span>{" "}
+            is live. Perform to Eben's official soundtrack, film{" "}
             <span className="font-bold text-cream">2 explosive minutes</span>, and
             upload it right here — your video goes straight to the{" "}
             <span className="font-bold text-gold">Prayer Hour Google Drive</span>.
