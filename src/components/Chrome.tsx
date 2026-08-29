@@ -123,10 +123,6 @@ export function Footer() {
           <p className="display text-2xl">
             PRAYER<span className="text-gold"> HOUR</span>
           </p>
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-parch/80">
-            A movement raising the next generation of Kingdom talent from Ghana's
-            senior high schools — one soundtrack at a time.
-          </p>
           <SocialIcons className="mt-5" />
         </div>
         <div className="text-sm">
