@@ -1,4 +1,5 @@
 import { CARRD_URL } from "../data";
+import { SocialIcons } from "./Community";
 
 const TICKER_ITEMS = [
   "SUBMISSIONS OPEN",
@@ -65,6 +66,7 @@ export function Nav() {
           <a href="#challenge" className="transition-colors hover:text-gold">The Challenge</a>
           <a href="#how" className="transition-colors hover:text-gold">How It Works</a>
           <a href="#rules" className="transition-colors hover:text-gold">Rules &amp; FAQ</a>
+          <a href="#follow" className="transition-colors hover:text-gold">Follow</a>
           <a
             href={CARRD_URL}
             target="_blank"
@@ -125,6 +127,7 @@ export function Footer() {
             A movement raising the next generation of Kingdom talent from Ghana's
             senior high schools — one soundtrack at a time.
           </p>
+          <SocialIcons className="mt-5" />
         </div>
         <div className="text-sm">
           <p className="display mb-4 text-sm tracking-wider text-gold">QUICK LINKS</p>

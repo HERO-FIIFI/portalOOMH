@@ -1,5 +1,50 @@
 export const CARRD_URL = "https://prayerhour.carrd.co";
 
+export const SOCIALS = [
+  { id: "tiktok", label: "TikTok — @PrayerHour", url: "https://www.tiktok.com/@prayerhour" },
+  { id: "instagram", label: "Instagram Reels — @PrayerHour", url: "https://www.instagram.com/prayerhour" },
+  { id: "youtube", label: "YouTube — Prayer Hour", url: "https://www.youtube.com/@PrayerHour" },
+  { id: "whatsapp", label: "WhatsApp Community", url: "https://chat.whatsapp.com/PrayerHourOilOnMyHead" },
+  { id: "telegram", label: "Telegram Channel", url: "https://t.me/prayerhour" },
+] as const;
+export type SocialId = (typeof SOCIALS)[number]["id"];
+
+export const HASHTAG = "#OilOnMyHeadChallenge";
+
+export const SHARE_TEXT =
+  "I just entered the Prayer Hour 'Oil On My Head' Challenge! 🚀🔥 Watch out for the Top 16! #OilOnMyHeadChallenge #PrayerHour";
+
+export const STAGES = [
+  {
+    n: 1,
+    title: "Submissions Open",
+    status: "ACTIVE NOW",
+    note: "The portal is live — entries are flowing straight into the Prayer Hour Drive.",
+    active: true,
+  },
+  {
+    n: 2,
+    title: "Screening & Top 16",
+    status: "UP NEXT",
+    note: "The team screens every entry and selects the Top 16 Finalists.",
+    active: false,
+  },
+  {
+    n: 3,
+    title: "Team School Visits",
+    status: "SOON",
+    note: "Prayer Hour visits each finalist at their school for a feature moment.",
+    active: false,
+  },
+  {
+    n: 4,
+    title: "Public Voting & Winner",
+    status: "FINAL STAGE",
+    note: "Videos go live for public voting — then the winner is announced.",
+    active: false,
+  },
+];
+
 export const REGIONS = [
   "Ahafo", "Ashanti", "Bono", "Bono East", "Central", "Eastern", "Greater Accra",
   "North East", "Northern", "Oti", "Savannah", "Upper East", "Upper West",

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CARRD_URL, REGIONS, VIDEO_RULES } from "../data";
+import { CARRD_URL, HASHTAG, REGIONS, SHARE_TEXT, VIDEO_RULES } from "../data";
+import { SocialIcons } from "./Community";
 import { useLocalStorage } from "../hooks";
 import {
   APPS_SCRIPT_CODE,
@@ -551,6 +552,86 @@ function DriveConnectPanel() {
   );
 }
 
+/* ================= share my entry ================= */
+
+function ShareBlock() {
+  const [copiedShare, setCopiedShare] = useState(false);
+  const waShare = `https://wa.me/?text=${encodeURIComponent(SHARE_TEXT)}`;
+  const xShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}`;
+
+  const onShare = async () => {
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ text: SHARE_TEXT });
+        return;
+      }
+      throw new Error("no-native-share");
+    } catch (err) {
+      if ((err as Error | null)?.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(SHARE_TEXT);
+        setCopiedShare(true);
+        window.setTimeout(() => setCopiedShare(false), 2400);
+      } catch {
+        /* clipboard blocked */
+      }
+    }
+  };
+
+  return (
+    <div className="mx-auto mt-10 max-w-2xl border-2 border-line bg-ink p-6 text-left">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="display text-2xl text-cream">
+          SHARE <span className="text-gold">MY ENTRY</span>
+        </p>
+        <SocialIcons />
+      </div>
+      <p className="mt-2 text-sm leading-relaxed text-parch/70">
+        Tell your whole school the oil is on your head — one tap. Tag{" "}
+        <span className="font-bold text-gold">{HASHTAG}</span> so the team can find your post.
+      </p>
+      <p className="mt-4 border border-dashed border-line bg-coal p-3.5 font-mono text-[11px] leading-relaxed text-parch/85">
+        {SHARE_TEXT}
+      </p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={onShare}
+          className={`display border-2 px-5 py-3 text-base transition-all hover:-translate-y-0.5 active:translate-y-0 ${
+            copiedShare
+              ? "border-moss bg-moss/15 text-moss"
+              : "border-ink bg-gold text-ink hover:bg-amber"
+          }`}
+        >
+          {copiedShare ? "COPIED ✓" : "SHARE MY ENTRY"}
+        </button>
+        <a
+          href={waShare}
+          target="_blank"
+          rel="noreferrer"
+          className="display flex items-center gap-2 border-2 border-cream/60 px-5 py-3 text-base text-cream transition-all hover:-translate-y-0.5 hover:border-gold hover:text-gold active:translate-y-0"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 1.9a8.1 8.1 0 1 1-4.2 15l-.5-.3-2.5.7.7-2.4-.3-.5A8.1 8.1 0 0 1 12 3.9zM8.8 7.4c-.2 0-.5.1-.7.4-.2.3-1 1-1 2.3s1 2.6 1.1 2.8c.2.2 2 3.1 4.8 4.2 2.3.9 2.8.7 3.3.7.5-.1 1.6-.7 1.8-1.3.2-.6.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3l-2.1-1c-.3-.1-.5-.2-.7.1l-1 1.2c-.1.2-.3.2-.6.1a6.6 6.6 0 0 1-3.2-2.9c-.2-.4 0-.5.1-.7l.5-.6c.2-.2.2-.4.1-.6l-.9-2.1c-.2-.4-.4-.7-.7-.7h-.4z" />
+          </svg>
+          SHARE ON WHATSAPP
+        </a>
+        <a
+          href={xShare}
+          target="_blank"
+          rel="noreferrer"
+          className="display flex items-center gap-2 border-2 border-cream/60 px-5 py-3 text-base text-cream transition-all hover:-translate-y-0.5 hover:border-gold hover:text-gold active:translate-y-0"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M18.2 2h3.3l-7.2 8.2L22.8 22h-6.6l-5.2-6.8L5.1 22H1.8l7.7-8.8L1.2 2h6.8l4.7 6.2L18.2 2zm-1.2 18h1.8L7.2 3.9H5.2L17 20z" />
+          </svg>
+          POST ON X
+        </a>
+      </div>
+    </div>
+  );
+}
+
 /* ================= success screen ================= */
 
 function SuccessScreen({
@@ -647,6 +728,8 @@ function SuccessScreen({
           </div>
         ))}
       </div>
+
+      <ShareBlock />
 
       <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
         <button

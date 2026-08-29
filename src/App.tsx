@@ -1,5 +1,6 @@
 import { Challenge, HowItWorks, Rules } from "./components/Brief";
 import { Footer, Nav, Ticker } from "./components/Chrome";
+import { FollowChallenge, StageTracker } from "./components/Community";
 import { Masthead } from "./components/Masthead";
 import { Portal } from "./components/Portal";
 import { useRevealObserver } from "./hooks";
@@ -14,10 +15,12 @@ export default function App() {
       <Nav />
       <main>
         <Masthead />
+        <StageTracker />
         <Challenge />
         <HowItWorks />
         <Rules />
         <Portal />
+        <FollowChallenge />
       </main>
       <Footer />
     </div>
