@@ -48,15 +48,11 @@ export function Nav() {
     <header className="sticky top-0 z-50 border-b border-line/70 bg-ink/90 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <a href="#top" className="group flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center border-2 border-gold bg-coal transition-colors group-hover:bg-gold">
-            {/* flame mark */}
-            <svg width="16" height="18" viewBox="0 0 16 18" className="text-gold transition-colors group-hover:text-ink">
-              <path
-                d="M8 0c1 3-3 4.5-3 8a3 3 0 0 0 6 .2C11 10 13 11 13 13.5A5.5 5.5 0 0 1 8 18a5.5 5.5 0 0 1-5.5-5C2.5 8 8 6 8 0z"
-                fill="currentColor"
-              />
-            </svg>
-          </span>
+          <img
+            src="/logo.png"
+            alt="Prayer Hour"
+            className="h-10 w-10 border-2 border-gold object-cover transition-opacity group-hover:opacity-90"
+          />
           <span className="display text-xl leading-none">
             PRAYER<span className="text-gold">&nbsp;HOUR</span>
           </span>
