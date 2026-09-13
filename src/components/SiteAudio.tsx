@@ -1,36 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Plays the official challenge song on load. Most browsers block unmuted
- * autoplay until the visitor interacts with the page, so this starts muted,
- * attempts an unmuted play immediately, and — if that's blocked — unmutes
- * and plays on the first click/keydown/touch anywhere on the page.
+ * Plays the official challenge song on load. Browsers block audio with
+ * sound until the visitor interacts with the page (click/tap/key) — no way
+ * around that. So this starts muted (which autoplay is always allowed to
+ * do) and unmutes on the very first interaction anywhere on the page.
  */
 export function SiteAudio() {
   const ref = useRef<HTMLAudioElement>(null);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
 
   useEffect(() => {
     const audio = ref.current;
     if (!audio) return;
 
-    audio.play().catch(() => {
-      // autoplay blocked — wait for the first user gesture, then retry
-      setMuted(true);
-      const unlock = () => {
-        audio.muted = false;
-        setMuted(false);
-        audio.play().catch(() => {});
-        window.removeEventListener("pointerdown", unlock);
-        window.removeEventListener("keydown", unlock);
-      };
-      window.addEventListener("pointerdown", unlock);
-      window.addEventListener("keydown", unlock);
-      return () => {
-        window.removeEventListener("pointerdown", unlock);
-        window.removeEventListener("keydown", unlock);
-      };
-    });
+    audio.muted = true;
+    audio.play().catch(() => {});
+
+    const unlock = () => {
+      audio.muted = false;
+      setMuted(false);
+      audio.play().catch(() => {});
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
   }, []);
 
   const toggle = () => {
@@ -43,7 +42,7 @@ export function SiteAudio() {
 
   return (
     <>
-      <audio ref={ref} src="/audio/oil-on-my-head-remix.m4a" loop autoPlay playsInline />
+      <audio ref={ref} src="/audio/oil-on-my-head-remix.m4a" loop autoPlay muted playsInline />
       <button
         type="button"
         onClick={toggle}
