@@ -25,7 +25,7 @@ export const APPS_SCRIPT_CODE = `/** PRAYER HOUR — Oil On My Head Challenge ·
  *  4) Each participant gets an automatic confirmation email (MailApp). */
 
 var FOLDER_ID = "1y6KRCp7HWC0LkioCp2xMMCdtlPtyurRE";
-var SHEET_ID  = "PASTE_YOUR_GOOGLE_SHEET_ID";
+var SHEET_ID  = "1aNjy3jsHhFRer3pS_ubVgugwwM22C9dVTWVJ3b7VOPE";
 
 function doGet() {
   return json_({ ok: true, service: "prayer-hour-portal" });
