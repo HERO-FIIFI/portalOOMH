@@ -4,14 +4,13 @@
  * Videos + entry data are pushed to a Google Apps Script Web App that the
  * Prayer Hour team deploys once (code below). The Web App drops the video
  * file into a Drive folder and appends the entry row to a Google Sheet.
- *
- * If no Web App URL is configured the portal runs in DEMO MODE: the entry is
- * validated, reference-coded and stored locally so the full flow can be
- * previewed without touching Drive.
  */
 
 export const URL_STORAGE_KEY = "ph_apps_script_url";
-export const ENTRIES_KEY = "ph_local_entries";
+
+/** Deployed Web App URL. Organisers can still override it from the panel. */
+export const DEFAULT_APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbycgRszjvO1gF8jkM35HemFqPet1PBVTLN0Q5ayq7cokizv1bs8VEyj45GtKvNaQgI/exec";
 
 /** Simple passkey protecting the organisers panel. Change it freely here. */
 export const ORGANISER_PASSKEY = "prayerhour";
@@ -25,7 +24,7 @@ export const APPS_SCRIPT_CODE = `/** PRAYER HOUR — Oil On My Head Challenge ·
  *     (Execute as: Me · Access: Anyone). Copy the /exec URL into the portal.
  *  4) Each participant gets an automatic confirmation email (MailApp). */
 
-var FOLDER_ID = "PASTE_YOUR_DRIVE_FOLDER_ID";
+var FOLDER_ID = "1y6KRCp7HWC0LkioCp2xMMCdtlPtyurRE";
 var SHEET_ID  = "PASTE_YOUR_GOOGLE_SHEET_ID";
 
 function doGet() {
@@ -113,16 +112,15 @@ export interface EntryPayload {
 
 export interface SubmitResult {
   ok: boolean;
-  demo: boolean;
   videoUrl?: string;
   error?: string;
 }
 
 export function getAppsScriptUrl(): string {
   try {
-    return (window.localStorage.getItem(URL_STORAGE_KEY) ?? "").trim();
+    return (window.localStorage.getItem(URL_STORAGE_KEY) ?? DEFAULT_APPS_SCRIPT_URL).trim();
   } catch {
-    return "";
+    return DEFAULT_APPS_SCRIPT_URL;
   }
 }
 
@@ -136,7 +134,6 @@ export { makeRefCode };
 
 /**
  * POSTs the entry (and optional video file) to the Apps Script Web App.
- * Falls back to a simulated demo submission when no URL is configured.
  */
 export function submitEntry(
   payload: EntryPayload,
@@ -145,29 +142,6 @@ export function submitEntry(
 ): Promise<SubmitResult> {
   const url = getAppsScriptUrl();
 
-  if (!url) {
-    // ---- demo mode: simulate a network upload ----
-    return new Promise((resolve) => {
-      let pct = 0;
-      const iv = window.setInterval(() => {
-        pct = Math.min(100, pct + 6 + Math.random() * 12);
-        onProgress(Math.floor(pct));
-        if (pct >= 100) {
-          window.clearInterval(iv);
-          try {
-            const prev = JSON.parse(window.localStorage.getItem(ENTRIES_KEY) ?? "[]");
-            prev.push({ ...payload, at: new Date().toISOString() });
-            window.localStorage.setItem(ENTRIES_KEY, JSON.stringify(prev));
-          } catch {
-            /* ignore quota */
-          }
-          window.setTimeout(() => resolve({ ok: true, demo: true }), 350);
-        }
-      }, 120);
-    });
-  }
-
-  // ---- live mode: real upload to Google Drive via Apps Script ----
   return new Promise((resolve) => {
     const fd = new FormData();
     Object.entries(payload).forEach(([k, v]) => fd.append(k, v));
@@ -182,14 +156,14 @@ export function submitEntry(
       onProgress(100);
       try {
         const data = JSON.parse(xhr.responseText || "{}");
-        if (data.ok) resolve({ ok: true, demo: false, videoUrl: data.videoUrl });
-        else resolve({ ok: false, demo: false, error: data.error || "Drive intake rejected the entry." });
+        if (data.ok) resolve({ ok: true, videoUrl: data.videoUrl });
+        else resolve({ ok: false, error: data.error || "Drive intake rejected the entry." });
       } catch {
-        resolve({ ok: false, demo: false, error: "Unexpected response from the intake script." });
+        resolve({ ok: false, error: "Unexpected response from the intake script." });
       }
     };
     xhr.onerror = () =>
-      resolve({ ok: false, demo: false, error: "Network error — check your connection and try again." });
+      resolve({ ok: false, error: "Network error — check your connection and try again." });
     xhr.send(fd);
   });
 }

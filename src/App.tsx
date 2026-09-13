@@ -3,6 +3,7 @@ import { Footer, Nav, Ticker } from "./components/Chrome";
 import { FollowChallenge, StageTracker } from "./components/Community";
 import { Masthead } from "./components/Masthead";
 import { Portal } from "./components/Portal";
+import { SiteAudio } from "./components/SiteAudio";
 import { useRevealObserver } from "./hooks";
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <div className="relative min-h-screen bg-ink font-body text-cream">
       <div className="noise-layer" aria-hidden="true" />
+      <SiteAudio />
       <Ticker />
       <Nav />
       <main>

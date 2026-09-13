@@ -4,7 +4,7 @@ import { SocialIcons } from "./Community";
 import { useLocalStorage } from "../hooks";
 import {
   APPS_SCRIPT_CODE,
-  ENTRIES_KEY,
+  DEFAULT_APPS_SCRIPT_URL,
   ORGANISER_PASSKEY,
   UNLOCK_KEY,
   URL_STORAGE_KEY,
@@ -354,7 +354,7 @@ function UploadZone({
 /* ================= setup panel (Drive connect) ================= */
 
 function DriveConnectPanel() {
-  const [url, setUrl] = useLocalStorage(URL_STORAGE_KEY);
+  const [url, setUrl] = useLocalStorage(URL_STORAGE_KEY, DEFAULT_APPS_SCRIPT_URL);
   const [draft, setDraft] = useState(url);
   const [copied, setCopied] = useState(false);
 
@@ -654,9 +654,7 @@ function SuccessScreen({
         YOU'RE IN, <span className="text-gold">{payload.leadName.split(" ")[0].toUpperCase() || "CHAMPION"}</span>!
       </p>
       <p className="mx-auto mt-4 max-w-xl leading-relaxed text-parch/85">
-        Your entry {result.demo && "has been recorded in demo mode — "}
-        {result.demo ? "it will" : "has"} been delivered to the Prayer Hour team
-        {result.demo ? " once the Drive intake is connected" : " and stored in their Google Drive"}.
+        Your entry has been delivered to the Prayer Hour team and stored in their Google Drive.
         Keep your reference code safe — you'll need it for any enquiries.
       </p>
 
@@ -685,7 +683,7 @@ function SuccessScreen({
         </ul>
       </div>
 
-      {!result.demo && payload.email && (
+      {payload.email && (
         <p className="mt-4 text-xs text-parch/60">
           ✉ A confirmation email is on its way to <span className="font-bold text-parch">{payload.email}</span>
           {payload.ageGroup === "Under 18" && payload.guardianPhone
@@ -895,14 +893,6 @@ export function Portal() {
     setProgress(0);
   };
 
-  const localCount = useMemo(() => {
-    try {
-      return JSON.parse(window.localStorage.getItem(ENTRIES_KEY) ?? "[]").length as number;
-    } catch {
-      return 0;
-    }
-  }, [outcome]);
-
   return (
     <section id="submit" ref={rootRef} className="relative scroll-mt-20 border-t-4 border-gold bg-coal/40 py-20 lg:py-28">
       <div className="pointer-events-none absolute -right-32 top-0 h-[28rem] w-[28rem] rounded-full bg-gold/8 blur-3xl" />
@@ -978,12 +968,6 @@ export function Portal() {
                   prayerhour.carrd.co ↗
                 </a>
               </div>
-
-              {localCount > 0 && phase !== "done" && (
-                <div className="reveal border border-line bg-ink p-4 text-xs text-parch/60">
-                  {localCount} demo entr{localCount === 1 ? "y" : "ies"} stored on this device.
-                </div>
-              )}
             </div>
           </aside>
 
