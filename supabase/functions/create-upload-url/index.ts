@@ -25,7 +25,7 @@ function json(body: Record<string, unknown>, status: number, origin: string | nu
 
 Deno.serve(async (request) => {
   const origin = request.headers.get("origin");
-  if (request.method === "OPTIONS") return new Response("ok", { status: 204, headers: headers(origin) });
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(origin) });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, origin);
 
   const authorization = request.headers.get("authorization") || "";
