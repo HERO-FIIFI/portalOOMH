@@ -1,3 +1,5 @@
+import { uploadVideoToSupabase } from "./supabaseUpload";
+
 /**
  * Google Drive submission bridge.
  *
@@ -26,6 +28,32 @@ export const APPS_SCRIPT_CODE = `/** PRAYER HOUR — Oil On My Head Challenge ·
 
 var FOLDER_ID = "1y6KRCp7HWC0LkioCp2xMMCdtlPtyurRE";
 var SHEET_ID  = "1aNjy3jsHhFRer3pS_ubVgugwwM22C9dVTWVJ3b7VOPE";
+var RETENTION_DAYS = 365;
+
+function escapeHtml_(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function purgeOldData() {
+  var cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  var folder = DriveApp.getFolderById(FOLDER_ID);
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    var file = files.next();
+    if (file.getDateCreated() < cutoff) file.setTrashed(true);
+  }
+
+  var sheet = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
+  for (var row = sheet.getLastRow(); row >= 2; row--) {
+    var createdAt = sheet.getRange(row, 1).getValue();
+    if (createdAt instanceof Date && createdAt < cutoff) sheet.deleteRow(row);
+  }
+}
 
 function doGet() {
   return json_({ ok: true, service: "prayer-hour-portal" });
@@ -58,8 +86,12 @@ function doPost(e) {
     /* Confirmation email to the participant (fails silently — never blocks the entry). */
     try {
       if (p.email) {
+        var emailLeadName = escapeHtml_(p.leadName || "champion");
+        var emailGuardianName = escapeHtml_(p.guardianName || "");
+        var emailGuardianPhone = escapeHtml_(p.guardianPhone || "");
+        var emailRefCode = escapeHtml_(p.refCode || "");
         var guardianLine = (p.ageGroup === "Under 18")
-          ? "<p>Parent/guardian on file: <b>" + (p.guardianName || "") + "</b> · " + (p.guardianPhone || "") +
+          ? "<p>Parent/guardian on file: <b>" + emailGuardianName + "</b> · " + emailGuardianPhone +
             " — the team may call this number to confirm consent.</p>"
           : "";
         MailApp.sendEmail({
@@ -69,9 +101,9 @@ function doPost(e) {
           htmlBody:
             "<div style='font-family:Arial,sans-serif;color:#222'>" +
             "<h2 style='color:#c97f0a'>The oil is on your head! 🔥</h2>" +
-            "<p>Hi <b>" + (p.leadName || "champion") + "</b>,</p>" +
+            "<p>Hi <b>" + emailLeadName + "</b>,</p>" +
             "<p>Your <b>Oil On My Head Challenge</b> entry has been received. Thank you!</p>" +
-            "<p>Reference code: <b>" + p.refCode + "</b> — quote it in any enquiry.</p>" +
+            "<p>Reference code: <b>" + emailRefCode + "</b> — quote it in any enquiry.</p>" +
             guardianLine +
             "<p>All entries are screened and the <b>Top 16 Finalists</b> will be contacted on the phone/WhatsApp number you provided before the team's school visits and public voting.</p>" +
             "<p>— The Prayer Hour Team</p>" +
@@ -86,6 +118,8 @@ function doPost(e) {
   }
 }
 
+ * Run purgeOldData manually or create a daily Apps Script time trigger for it.
+ */
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
@@ -135,35 +169,47 @@ export { makeRefCode };
 /**
  * POSTs the entry (and optional video file) to the Apps Script Web App.
  */
-export function submitEntry(
+export async function submitEntry(
   payload: EntryPayload,
   file: File | null,
   onProgress: (pct: number) => void,
 ): Promise<SubmitResult> {
   const url = getAppsScriptUrl();
+  const fd = new FormData();
+  Object.entries(payload).forEach(([k, v]) => fd.append(k, v));
+
+  try {
+    if (file) {
+      const objectName = await uploadVideoToSupabase(file, payload.refCode, onProgress);
+      fd.set("videoLink", `supabase://${objectName}`);
+    }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "The video upload failed." };
+  }
 
   return new Promise((resolve) => {
-    const fd = new FormData();
-    Object.entries(payload).forEach(([k, v]) => fd.append(k, v));
-    if (file) fd.append("videoFile", file, file.name);
-
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
     xhr.upload.onprogress = (ev) => {
-      if (ev.lengthComputable) onProgress(Math.round((ev.loaded / ev.total) * 96));
+      if (ev.lengthComputable) onProgress(file ? 96 + Math.round((ev.loaded / ev.total) * 4) : Math.round((ev.loaded / ev.total) * 100));
     };
     xhr.onload = () => {
       onProgress(100);
       try {
         const data = JSON.parse(xhr.responseText || "{}");
-        if (data.ok) resolve({ ok: true, videoUrl: data.videoUrl });
-        else resolve({ ok: false, error: data.error || "Drive intake rejected the entry." });
+        if (data.ok) {
+          resolve({
+            ok: true,
+            videoUrl: typeof data.videoUrl === "string" && data.videoUrl.startsWith("http") ? data.videoUrl : undefined,
+          });
+        } else {
+          resolve({ ok: false, error: data.error || "Drive intake rejected the entry." });
+        }
       } catch {
         resolve({ ok: false, error: "Unexpected response from the intake script." });
       }
     };
-    xhr.onerror = () =>
-      resolve({ ok: false, error: "Network error — check your connection and try again." });
+    xhr.onerror = () => resolve({ ok: false, error: "Network error — check your connection and try again." });
     xhr.send(fd);
   });
 }

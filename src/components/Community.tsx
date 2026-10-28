@@ -268,7 +268,7 @@ export function FollowChallenge() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <a
-                  href={SOCIALS[3].url}
+                  href={SOCIALS[4].url}
                   target="_blank"
                   rel="noreferrer"
                   className="display flex items-center gap-2 border-2 border-gold bg-gold px-4 py-2.5 text-sm text-ink transition-all hover:-translate-y-0.5 hover:bg-amber active:translate-y-0"
@@ -277,7 +277,7 @@ export function FollowChallenge() {
                   JOIN WHATSAPP
                 </a>
                 <a
-                  href={SOCIALS[4].url}
+                  href={SOCIALS[5].url}
                   target="_blank"
                   rel="noreferrer"
                   className="display flex items-center gap-2 border-2 border-cream/70 px-4 py-2.5 text-sm text-cream transition-all hover:-translate-y-0.5 hover:border-gold hover:text-gold active:translate-y-0"

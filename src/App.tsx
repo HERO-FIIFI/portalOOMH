@@ -10,7 +10,7 @@ export default function App() {
   useRevealObserver();
 
   return (
-    <div className="relative min-h-screen bg-ink font-body text-cream">
+    <div id="top" className="relative min-h-screen bg-ink font-body text-cream">
       <div className="noise-layer" aria-hidden="true" />
       <SiteAudio />
       <Ticker />

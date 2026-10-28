@@ -3,3 +3,8 @@ node_modules/
 dist/
 build/
 *.log
+.env
+.env.local
+.env.*.local
+.vercel
+.env*.local

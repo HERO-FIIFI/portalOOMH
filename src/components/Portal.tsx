@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CARRD_URL, HASHTAG, REGIONS, SHARE_TEXT, VIDEO_RULES } from "../data";
 import { SocialIcons } from "./Community";
 import { useLocalStorage } from "../hooks";
+import { isAcceptedVideoLink } from "../lib/security";
 import {
   APPS_SCRIPT_CODE,
   DEFAULT_APPS_SCRIPT_URL,
@@ -206,9 +207,9 @@ function UploadZone({
         return;
       }
       const sizeMB = f.size / (1024 * 1024);
-      if (sizeMB > 100) {
+      if (sizeMB > 1024) {
         setLocalErr(
-          "File is over the 100MB limit. Compress it to under 100MB — or paste a Drive/YouTube link below instead.",
+          "File is over the 1GB limit. Compress it to under 1GB — or paste a Drive/YouTube link below instead.",
         );
         return;
       }
@@ -282,7 +283,7 @@ function UploadZone({
               </p>
               <p className="text-xs text-parch/60">
                 Accepted: <span className="text-parch">.mp4 · .mov</span> (also .webm / .m4v) — max{" "}
-                <span className="text-parch">100 MB</span>, max runtime{" "}
+                <span className="text-parch">1 GB</span>, max runtime{" "}
                 <span className="text-parch">2:00</span>
               </p>
             </>
@@ -394,7 +395,18 @@ function DriveConnectPanel() {
       /* ignore */
     }
   };
-  const connected = /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec\/?$/.test(url);
+    const connected = (() => {
+    try {
+      const parsed = new URL(url);
+      return (
+        parsed.protocol === "https:" &&
+        (parsed.hostname === "script.google.com" || parsed.hostname === "script.googleusercontent.com") &&
+        parsed.pathname.endsWith("/exec")
+      );
+    } catch {
+      return false;
+    }
+  })();
 
   const copyCode = async () => {
     try {
@@ -807,8 +819,8 @@ export function Portal() {
       e.otherNames = `List the other ${form.entryType === "Duo" ? "member" : "members"} of your ${form.entryType.toLowerCase()}.`;
     if (!video && !form.videoLink.trim())
       e.video = "Upload your video — or paste a Drive/YouTube link below.";
-    if (form.videoLink.trim() && !/^https:\/\/[^\s]+\.[^\s]+/i.test(form.videoLink.trim()))
-      e.videoLink = "Links must start with https://";
+    if (form.videoLink.trim() && !isAcceptedVideoLink(form.videoLink.trim()))
+      e.videoLink = "Use a secure Google Drive or YouTube link.";
     if (!form.ageGroup) e.ageGroup = "Tell us if any participant is under 18.";
     if (needsGuardian && form.ageGroup === "under18") {
       if (!form.guardianName.trim()) e.guardianName = "Parent/guardian name is required under 18.";
@@ -1122,7 +1134,7 @@ export function Portal() {
                       }
                     />
                     <div className="border-2 border-dashed border-amber/60 bg-ink/60 p-4">
-                      <Label>UPLOAD FAILED, FILE TOO BIG, OR SLOW NETWORK? PASTE A LINK INSTEAD</Label>
+                      <Label>VIDEO OVER 1 GB? UPLOAD TO DRIVE OR YOUTUBE, THEN PASTE THE LINK</Label>
                       <input
                         className={`field font-mono text-[13px] ${errors.videoLink ? "has-error" : ""}`}
                         placeholder="https://drive.google.com/… or https://youtu.be/…"
@@ -1138,7 +1150,9 @@ export function Portal() {
                         }}
                       />
                       <Err msg={errors.videoLink} />
-                      <p className="mt-2 text-xs leading-relaxed text-parch/55">
+                      <p className="mb-3 text-xs leading-relaxed text-amber/85">
+                        Direct uploads are limited to 1 GB. For larger videos, upload to Google Drive or YouTube Unlisted and paste the secure link here.
+                      </p>                      <p className="mt-2 text-xs leading-relaxed text-parch/55">
                         No stress — upload the video to your own{" "}
                         <span className="text-parch">Google Drive (share: “Anyone with the link”)</span>{" "}
                         or <span className="text-parch">YouTube (Unlisted)</span>, then paste the share
@@ -1281,9 +1295,8 @@ export function Portal() {
                       )}
                     </span>
                   </button>
-                  <p className="mt-3 text-center text-xs text-parch/55">
-                    Your video and details are delivered to the Prayer Hour team's Google Drive.
-                    Only the screening team can access raw entries.
+                                    <p className="mt-3 text-center text-xs text-parch/55">
+                    Your video and details are delivered to the Prayer Hour team's Google Drive. Direct uploads are kept for up to 365 days, then removed by the organizers. Link submissions remain subject to the sharing settings of Google Drive or YouTube.
                   </p>
                 </div>
               </form>
