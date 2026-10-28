@@ -8,15 +8,9 @@ import { uploadVideoToSupabase } from "./supabaseUpload";
  * file into a Drive folder and appends the entry row to a Google Sheet.
  */
 
-export const URL_STORAGE_KEY = "ph_apps_script_url";
-
-/** Deployed Web App URL. Organisers can still override it from the panel. */
+/** Deployed Web App URL. Override it with VITE_APPS_SCRIPT_URL in Vercel. */
 export const DEFAULT_APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbycgRszjvO1gF8jkM35HemFqPet1PBVTLN0Q5ayq7cokizv1bs8VEyj45GtKvNaQgI/exec";
-
-/** Simple passkey protecting the organisers panel. Change it freely here. */
-export const ORGANISER_PASSKEY = "prayerhour";
-export const UNLOCK_KEY = "ph_org_unlocked";
 
 /** The exact script the organisers paste into script.google.com */
 export const APPS_SCRIPT_CODE = `/** PRAYER HOUR — Oil On My Head Challenge · Drive intake
@@ -187,11 +181,7 @@ export interface SubmitResult {
 }
 
 export function getAppsScriptUrl(): string {
-  try {
-    return (window.localStorage.getItem(URL_STORAGE_KEY) ?? DEFAULT_APPS_SCRIPT_URL).trim();
-  } catch {
-    return DEFAULT_APPS_SCRIPT_URL;
-  }
+  return (import.meta.env.VITE_APPS_SCRIPT_URL || DEFAULT_APPS_SCRIPT_URL).trim();
 }
 
 function makeRefCode(): string {

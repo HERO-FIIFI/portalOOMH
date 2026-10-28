@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CARRD_URL, HASHTAG, REGIONS, SHARE_TEXT, VIDEO_RULES } from "../data";
 import { SocialIcons } from "./Community";
-import { useLocalStorage } from "../hooks";
 import { isAcceptedVideoLink } from "../lib/security";
 import {
   APPS_SCRIPT_CODE,
   DEFAULT_APPS_SCRIPT_URL,
-  ORGANISER_PASSKEY,
-  UNLOCK_KEY,
-  URL_STORAGE_KEY,
   makeRefCode,
   submitEntry,
   type EntryPayload,
@@ -355,54 +351,13 @@ function UploadZone({
 /* ================= setup panel (Drive connect) ================= */
 
 function DriveConnectPanel() {
-  const [url, setUrl] = useLocalStorage(URL_STORAGE_KEY, DEFAULT_APPS_SCRIPT_URL);
-  const [draft, setDraft] = useState(url);
   const [copied, setCopied] = useState(false);
-
-  /* passkey gate — keeps participants out of the Drive settings */
-  const [unlocked, setUnlocked] = useState<boolean>(() => {
+  const connected = (() => {
     try {
-      return window.sessionStorage.getItem(UNLOCK_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-  const [pass, setPass] = useState("");
-  const [wrong, setWrong] = useState(false);
-
-  const tryUnlock = () => {
-    if (pass.trim().toLowerCase() === ORGANISER_PASSKEY.toLowerCase()) {
-      setUnlocked(true);
-      setWrong(false);
-      setPass("");
-      try {
-        window.sessionStorage.setItem(UNLOCK_KEY, "1");
-      } catch {
-        /* ignore */
-      }
-    } else {
-      setWrong(true);
-      setPass("");
-    }
-  };
-
-  const lockAgain = () => {
-    setUnlocked(false);
-    setWrong(false);
-    try {
-      window.sessionStorage.removeItem(UNLOCK_KEY);
-    } catch {
-      /* ignore */
-    }
-  };
-    const connected = (() => {
-    try {
-      const parsed = new URL(url);
-      return (
-        parsed.protocol === "https:" &&
+      const parsed = new URL(DEFAULT_APPS_SCRIPT_URL);
+      return parsed.protocol === "https:" &&
         (parsed.hostname === "script.google.com" || parsed.hostname === "script.googleusercontent.com") &&
-        parsed.pathname.endsWith("/exec")
-      );
+        parsed.pathname.endsWith("/exec");
     } catch {
       return false;
     }
@@ -422,144 +377,54 @@ function DriveConnectPanel() {
     <details className="reveal group border-2 border-line bg-ink">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-coal [&::-webkit-details-marker]:hidden">
         <span className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center border-2 border-line text-parch">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14.7 6.3a4.5 4.5 0 0 0-6.4 6.4L3 18v3h3l5.3-5.3a4.5 4.5 0 0 0 6.4-6.4L15 12l-3-3 2.7-2.7z" />
-            </svg>
-          </span>
+          <span className="grid h-9 w-9 place-items-center border-2 border-line text-parch">SET</span>
           <span>
-            <span className="display block text-lg text-cream">ORGANISERS — CONNECT YOUR DRIVE</span>
+            <span className="display block text-lg text-cream">ORGANISER SETUP</span>
             <span className="text-xs text-parch/60">
-              {connected ? "Intake script linked — submissions go live to Drive" : "Demo mode — set up the free Google Apps Script intake"}
+              {connected ? "Apps Script endpoint configured at build time" : "Configure the Apps Script endpoint before launch"}
             </span>
           </span>
         </span>
-        <span
-          className={`flex-none border px-2.5 py-1 text-[10px] font-bold tracking-[0.18em] ${
-            connected ? "border-moss bg-moss/10 text-moss" : "border-amber bg-amber/10 text-amber"
-          }`}
-        >
-          {connected ? "● CONNECTED" : "● DEMO MODE"}
+        <span className={`flex-none border px-2.5 py-1 text-[10px] font-bold tracking-[0.18em] ${connected ? "border-moss bg-moss/10 text-moss" : "border-amber bg-amber/10 text-amber"}`}>
+          {connected ? "CONFIGURED" : "NEEDS SETUP"}
         </span>
       </summary>
 
-      {unlocked ? (
       <div className="space-y-6 border-t-2 border-line px-5 py-6">
+        <p className="border-l-2 border-amber pl-4 text-sm leading-relaxed text-parch/85">
+          The public app no longer accepts an Apps Script URL from the browser. Set
+          <code className="mx-1 text-gold">VITE_APPS_SCRIPT_URL</code> in Vercel, then redeploy.
+          This panel is informational and is not an authentication boundary.
+        </p>
         <ol className="grid gap-5 text-sm leading-relaxed text-parch/85 md:grid-cols-3">
           {[
-            ["1 · CREATE THE INTAKE", "In Google Drive make a folder for videos and a Sheet for entries. Open script.google.com, paste the script below, and put both IDs inside it."],
-            ["2 · DEPLOY AS WEB APP", "Deploy → New deployment → Web app. Execute as “Me”, access “Anyone”. Copy the /exec URL it gives you."],
-            ["3 · PASTE THE URL HERE", "Save it below on any device that runs this portal. Every submission lands in the Sheet with a matching private video link, and the script emails a confirmation to each participant automatically."],
-          ].map(([t, b]) => (
-            <li key={t} className="border-l-2 border-gold pl-4">
-              <p className="display text-sm text-gold">{t}</p>
-              <p className="mt-1.5">{b}</p>
+            ["1 - CREATE THE INTAKE", "Create a Google Sheet, open script.google.com, paste the script below, and set the Drive/Sheet IDs."],
+            ["2 - DEPLOY AS WEB APP", "Deploy as a Web app, execute as yourself, allow access as required, and copy the /exec URL."],
+            ["3 - CONFIGURE VERCEL", "Set VITE_APPS_SCRIPT_URL in Vercel. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY as Apps Script properties."],
+          ].map(([title, body]) => (
+            <li key={title} className="border-l-2 border-gold pl-4">
+              <p className="display text-sm text-gold">{title}</p>
+              <p className="mt-1.5">{body}</p>
             </li>
           ))}
         </ol>
 
         <div>
-          <Label>APPS SCRIPT WEB APP URL</Label>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              className="field flex-1 font-mono text-[13px]"
-              placeholder="https://script.google.com/macros/s/…/exec"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={() => setUrl(draft.trim())}
-              className="display border-2 border-gold bg-gold px-5 py-2.5 text-sm text-ink transition-colors hover:bg-amber"
-            >
-              SAVE
-            </button>
-          </div>
-        </div>
-
-        <div>
           <div className="mb-2 flex items-center justify-between">
-            <Label>THE INTAKE SCRIPT (COPY → PASTE INTO APPS SCRIPT)</Label>
+            <Label>THE INTAKE SCRIPT (COPY - PASTE INTO APPS SCRIPT)</Label>
             <button
               type="button"
               onClick={copyCode}
-              className={`border px-3 py-1.5 text-[11px] font-bold tracking-wider transition-all ${
-                copied
-                  ? "border-moss bg-moss/15 text-moss"
-                  : "border-line text-parch hover:border-gold hover:text-gold"
-              }`}
+              className={`border px-3 py-1.5 text-[11px] font-bold tracking-wider transition-all ${copied ? "border-moss bg-moss/15 text-moss" : "border-line text-parch hover:border-gold hover:text-gold"}`}
             >
-              {copied ? "COPIED ✓" : "COPY CODE"}
+              {copied ? "COPIED" : "COPY CODE"}
             </button>
           </div>
           <pre className="max-h-64 overflow-auto border-2 border-line bg-ink p-4 font-mono text-[11px] leading-relaxed text-parch/80">
             {APPS_SCRIPT_CODE}
           </pre>
         </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-          <p className="text-[11px] text-parch/50">
-            Unlocked for this session — the panel locks itself again in a new browser tab.
-          </p>
-          <button
-            type="button"
-            onClick={lockAgain}
-            className="border border-line px-3 py-1.5 text-[11px] font-bold tracking-wider text-parch transition-colors hover:border-ember hover:text-ember"
-          >
-            LOCK PANEL
-          </button>
-        </div>
       </div>
-      ) : (
-      <div className="border-t-2 border-line px-5 py-12">
-        <div
-          className={`mx-auto max-w-md border-2 border-dashed border-line bg-coal/70 p-7 text-center ${
-            wrong ? "shake" : ""
-          }`}
-        >
-          <span className="mx-auto grid h-12 w-12 place-items-center border-2 border-gold/70 text-gold">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="4.5" y="10.5" width="15" height="9.5" />
-              <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
-              <circle cx="12" cy="15" r="1.6" fill="currentColor" />
-            </svg>
-          </span>
-          <p className="display mt-4 text-2xl text-cream">ORGANISERS ONLY</p>
-          <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-parch/65">
-            This panel controls where every submission is stored. Enter the Prayer Hour team
-            passkey to view or edit the Drive connection.
-          </p>
-          <div className="mx-auto mt-5 flex max-w-xs flex-col gap-2">
-            <input
-              type="password"
-              className="field text-center font-mono tracking-widest"
-              placeholder="Team passkey"
-              value={pass}
-              onChange={(e) => {
-                setPass(e.target.value);
-                setWrong(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") tryUnlock();
-              }}
-              aria-label="Organiser passkey"
-            />
-            <button
-              type="button"
-              onClick={tryUnlock}
-              className="display border-2 border-gold bg-gold px-4 py-2.5 text-sm text-ink transition-colors hover:bg-amber"
-            >
-              UNLOCK PANEL
-            </button>
-          </div>
-          {wrong && (
-            <p className="mt-3 text-xs font-bold text-ember">
-              Wrong passkey — this area is reserved for the Prayer Hour team.
-            </p>
-          )}
-        </div>
-      </div>
-      )}
     </details>
   );
 }

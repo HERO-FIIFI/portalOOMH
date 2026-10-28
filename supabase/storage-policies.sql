@@ -12,6 +12,7 @@ on conflict (id) do update set
   file_size_limit = 1073741824,
   allowed_mime_types = excluded.allowed_mime_types;
 
+drop policy if exists "Anonymous challenge users can upload videos" on storage.objects;
 create policy "Anonymous challenge users can upload videos"
 on storage.objects
 for insert
@@ -19,4 +20,5 @@ to authenticated
 with check (
   bucket_id = 'challenge-videos'
   and (storage.foldername(name))[1] = 'entries'
+  and (storage.foldername(name))[2] = (select auth.uid()::text)
 );
