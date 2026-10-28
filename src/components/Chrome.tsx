@@ -1,5 +1,6 @@
 import { CARRD_URL } from "../data";
 import { SocialIcons } from "./Community";
+import { AdminSetup } from "./AdminSetup";
 
 const TICKER_ITEMS = [
   "SUBMISSIONS OPEN",
@@ -151,6 +152,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line/60 py-4 text-center text-xs tracking-wide text-parch/50">
         © {new Date().getFullYear()} Prayer Hour · Oil On My Head Challenge · Accra, Ghana
+        <span className="ml-3"><AdminSetup /></span>
       </div>
     </footer>
   );

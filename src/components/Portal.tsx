@@ -3,8 +3,7 @@ import { CARRD_URL, HASHTAG, REGIONS, SHARE_TEXT, VIDEO_RULES } from "../data";
 import { SocialIcons } from "./Community";
 import { isAcceptedVideoLink } from "../lib/security";
 import {
-  APPS_SCRIPT_CODE,
-  DEFAULT_APPS_SCRIPT_URL,
+
   makeRefCode,
   submitEntry,
   type EntryPayload,
@@ -349,85 +348,6 @@ function UploadZone({
 }
 
 /* ================= setup panel (Drive connect) ================= */
-
-function DriveConnectPanel() {
-  const [copied, setCopied] = useState(false);
-  const connected = (() => {
-    try {
-      const parsed = new URL(DEFAULT_APPS_SCRIPT_URL);
-      return parsed.protocol === "https:" &&
-        (parsed.hostname === "script.google.com" || parsed.hostname === "script.googleusercontent.com") &&
-        parsed.pathname.endsWith("/exec");
-    } catch {
-      return false;
-    }
-  })();
-
-  const copyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(APPS_SCRIPT_CODE);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2200);
-    } catch {
-      /* clipboard blocked */
-    }
-  };
-
-  return (
-    <details className="reveal group border-2 border-line bg-ink">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-coal [&::-webkit-details-marker]:hidden">
-        <span className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center border-2 border-line text-parch">SET</span>
-          <span>
-            <span className="display block text-lg text-cream">ORGANISER SETUP</span>
-            <span className="text-xs text-parch/60">
-              {connected ? "Apps Script endpoint configured at build time" : "Configure the Apps Script endpoint before launch"}
-            </span>
-          </span>
-        </span>
-        <span className={`flex-none border px-2.5 py-1 text-[10px] font-bold tracking-[0.18em] ${connected ? "border-moss bg-moss/10 text-moss" : "border-amber bg-amber/10 text-amber"}`}>
-          {connected ? "CONFIGURED" : "NEEDS SETUP"}
-        </span>
-      </summary>
-
-      <div className="space-y-6 border-t-2 border-line px-5 py-6">
-        <p className="border-l-2 border-amber pl-4 text-sm leading-relaxed text-parch/85">
-          The public app no longer accepts an Apps Script URL from the browser. Set
-          <code className="mx-1 text-gold">VITE_APPS_SCRIPT_URL</code> in Vercel, then redeploy.
-          This panel is informational and is not an authentication boundary.
-        </p>
-        <ol className="grid gap-5 text-sm leading-relaxed text-parch/85 md:grid-cols-3">
-          {[
-            ["1 - CREATE THE INTAKE", "Create a Google Sheet, open script.google.com, paste the script below, and set the Drive/Sheet IDs."],
-            ["2 - DEPLOY AS WEB APP", "Deploy as a Web app, execute as yourself, allow access as required, and copy the /exec URL."],
-            ["3 - CONFIGURE VERCEL", "Set VITE_APPS_SCRIPT_URL in Vercel. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY as Apps Script properties."],
-          ].map(([title, body]) => (
-            <li key={title} className="border-l-2 border-gold pl-4">
-              <p className="display text-sm text-gold">{title}</p>
-              <p className="mt-1.5">{body}</p>
-            </li>
-          ))}
-        </ol>
-
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <Label>THE INTAKE SCRIPT (COPY - PASTE INTO APPS SCRIPT)</Label>
-            <button
-              type="button"
-              onClick={copyCode}
-              className={`border px-3 py-1.5 text-[11px] font-bold tracking-wider transition-all ${copied ? "border-moss bg-moss/15 text-moss" : "border-line text-parch hover:border-gold hover:text-gold"}`}
-            >
-              {copied ? "COPIED" : "COPY CODE"}
-            </button>
-          </div>
-          <pre className="max-h-64 overflow-auto border-2 border-line bg-ink p-4 font-mono text-[11px] leading-relaxed text-parch/80">
-            {APPS_SCRIPT_CODE}
-          </pre>
-        </div>
-      </div>
-    </details>
-  );
-}
 
 /* ================= share my entry ================= */
 
@@ -1166,10 +1086,6 @@ export function Portal() {
                 </div>
               </form>
             )}
-
-            <div className="mt-10">
-              <DriveConnectPanel />
-            </div>
           </div>
         </div>
       </div>
