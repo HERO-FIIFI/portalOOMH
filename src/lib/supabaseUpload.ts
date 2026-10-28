@@ -9,6 +9,7 @@ async function getAnonymousAccessToken() {
   const current = await supabase.auth.getSession();
   if (current.data.session?.access_token) return current.data.session.access_token;
 
+  await supabase.auth.signOut({ scope: "local" });
   const signedIn = await supabase.auth.signInAnonymously();
   if (signedIn.error || !signedIn.data.session?.access_token) {
     throw new Error(
@@ -32,10 +33,36 @@ export async function uploadVideoToSupabase(
   });
 
   if (signedUploadError || !signedUpload?.path || !signedUpload.token) {
-    throw new Error("Could not prepare the secure video upload.");
+    const responseStatus = signedUploadError?.context?.status;
+    if (responseStatus === 401) {
+      await supabase.auth.signOut({ scope: "local" });
+      const refreshedToken = await getAnonymousAccessToken();
+      const retry = await supabase.functions.invoke<{
+        path: string;
+        token: string;
+      }>("create-upload-url", {
+        body: { refCode, fileName: file.name },
+        headers: { Authorization: `Bearer ${refreshedToken}` },
+      });
+      if (!retry.error && retry.data?.path && retry.data.token) {
+        return uploadWithSignedUrl(file, retry.data.path, retry.data.token, refCode, onProgress, refreshedToken);
+      }
+    }
+    throw new Error("Could not prepare the secure video upload. Please refresh and try again.");
   }
 
   const objectName = signedUpload.path;
+  return uploadWithSignedUrl(file, objectName, signedUpload.token, refCode, onProgress, accessToken);
+}
+
+async function uploadWithSignedUrl(
+  file: File,
+  objectName: string,
+  signedToken: string,
+  refCode: string,
+  onProgress: (pct: number) => void,
+  accessToken: string,
+) {
   const endpoint = `${supabaseUrl.replace(/\.supabase\.co$/, ".storage.supabase.co")}/storage/v1/upload/resumable`;
   const uppy = new Uppy({ autoProceed: false, allowMultipleUploadBatches: false });
 
@@ -45,7 +72,7 @@ export async function uploadVideoToSupabase(
     headers: {
       authorization: `Bearer ${accessToken}`,
       apikey: supabaseKey,
-      "x-signature": signedUpload.token,
+      "x-signature": signedToken,
     },
     uploadDataDuringCreation: true,
     removeFingerprintOnSuccess: true,
