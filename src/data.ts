@@ -53,7 +53,7 @@ export const REGIONS = [
 ];
 
 export const VIDEO_RULES = [
-  "Maximum 2 minutes",
+  "Runtime flexible",
   "Must use Eben's “Oil On My Head” soundtrack",
   "Individual, duo, or group entries accepted",
   "All participants must be SHS students or graduates",
@@ -95,7 +95,7 @@ export const FAQ = [
   },
   {
     q: "How long can my video be?",
-    a: "Maximum 2 minutes (120 seconds). The portal checks your video's length before it lets you submit — anything longer will be rejected.",
+    a: "There is no strict runtime limit. Submit the full performance; the team will review it against the challenge guidelines.",
   },
   {
     q: "My video file is too big. What now?",

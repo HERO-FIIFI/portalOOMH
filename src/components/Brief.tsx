@@ -97,7 +97,7 @@ export function Challenge() {
             {/* stat strip */}
             <div className="mt-10 grid grid-cols-2 gap-px border-2 border-line bg-line sm:grid-cols-4">
               {[
-                ["2:00", "MAX RUNTIME"],
+                ["FLEXIBLE", "RUNTIME"],
                 ["1", "OFFICIAL SOUND"],
                 ["TOP 16", "FINALISTS"],
                 ["100%", "STUDENTS & GRADS"],
@@ -133,8 +133,8 @@ export function Challenge() {
               </ul>
               <div className="stripes-gold mt-7 h-3 w-full opacity-80" />
               <p className="mt-4 text-xs leading-relaxed text-parch/70">
-                The portal automatically rejects videos longer than 2 minutes, so time your
-                performance before you film.
+                There is no strict runtime limit, so submit the full performance. The team will
+                review the video against the challenge guidelines during screening.
               </p>
             </div>
           </div>

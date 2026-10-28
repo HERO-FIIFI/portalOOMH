@@ -38,7 +38,7 @@ interface VideoMeta {
   file: File;
   url: string;
   sizeMB: number;
-  duration: number;
+  duration: number | null;
 }
 
 type Phase = "idle" | "uploading" | "done" | "error";
@@ -69,24 +69,24 @@ const fmtDuration = (s: number) => {
   return `${m}:${String(r).padStart(2, "0")}`;
 };
 
-function probeDuration(file: File): Promise<number> {
-  return new Promise((resolve, reject) => {
+function probeDuration(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
-    const v = document.createElement("video");
-    v.preload = "metadata";
-    v.onloadedmetadata = () => {
-      const d = v.duration;
+    const video = document.createElement("video");
+    const finish = (duration: number | null) => {
+      window.clearTimeout(timeout);
       URL.revokeObjectURL(url);
-      Number.isFinite(d) ? resolve(d) : reject(new Error("bad"));
+      resolve(duration);
     };
-    v.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("bad"));
+    const timeout = window.setTimeout(() => finish(null), 5000);
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      finish(Number.isFinite(video.duration) ? video.duration : null);
     };
-    v.src = url;
+    video.onerror = () => finish(null);
+    video.src = url;
   });
 }
-
 /* ================= tiny UI atoms ================= */
 
 function Label({ req, children }: { req?: boolean; children: React.ReactNode }) {
@@ -194,37 +194,24 @@ function UploadZone({
   }, [video]);
 
   const handleFile = useCallback(
-    async (f: File) => {
+    async (file: File) => {
       setLocalErr("");
       onClearError();
-      if (!f.type.startsWith("video/")) {
-        setLocalErr("That's not a video file. Upload MP4, MOV, WEBM or similar.");
+      if (!file.type.startsWith("video/") && !/.(mp4|mov|m4v|webm)$/i.test(file.name)) {
+        setLocalErr("That does not look like a video file. Try MP4, MOV, WEBM or M4V.");
         return;
       }
-      const sizeMB = f.size / (1024 * 1024);
+      const sizeMB = file.size / (1024 * 1024);
       if (sizeMB > 1024) {
-        setLocalErr(
-          "File is over the 1GB limit. Compress it to under 1GB — or paste a Drive/YouTube link below instead.",
-        );
+        setLocalErr("File is over the 1GB limit. Compress it or use the link option below.");
         return;
       }
+
       setChecking(true);
-      try {
-        const duration = await probeDuration(f);
-        if (duration > 120.5) {
-          setLocalErr(
-            `Video runs ${fmtDuration(duration)} — the limit is 2:00. Trim it down and try again.`,
-          );
-          setChecking(false);
-          return;
-        }
-        if (video) URL.revokeObjectURL(video.url);
-        setVideo({ file: f, url: URL.createObjectURL(f), sizeMB, duration });
-      } catch {
-        setLocalErr("Couldn't read that video. Try re-exporting it as MP4.");
-      } finally {
-        setChecking(false);
-      }
+      const duration = await probeDuration(file);
+      if (video) URL.revokeObjectURL(video.url);
+      setVideo({ file, url: URL.createObjectURL(file), sizeMB, duration });
+      setChecking(false);
     },
     [onClearError, setVideo, video],
   );
@@ -237,33 +224,34 @@ function UploadZone({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
+          onDragOver={(event) => {
+            event.preventDefault();
             setDragging(true);
           }}
           onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
+          onDrop={(event) => {
+            event.preventDefault();
             setDragging(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) handleFile(f);
+            const file = event.dataTransfer.files?.[0];
+            if (file) void handleFile(file);
           }}
-          className={`flex w-full flex-col items-center justify-center gap-3 border-2 border-dashed px-6 py-12 transition-all ${
-            dragging
+          className={
+            "flex w-full flex-col items-center justify-center gap-3 border-2 border-dashed px-6 py-12 transition-all " +
+            (dragging
               ? "border-gold bg-bark scale-[1.01]"
               : error || localErr
                 ? "border-ember/80 bg-ink hover:border-ember"
-                : "border-line bg-ink hover:border-gold hover:bg-bark/60"
-          }`}
+                : "border-line bg-ink hover:border-gold hover:bg-bark/60")
+          }
         >
           {checking ? (
             <>
               <span className="grid h-12 w-12 place-items-center border-2 border-gold">
-                <svg width="22" height="22" viewBox="0 0 24 24" className="spin-slow text-gold" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ animationDuration: "1s" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" className="spin-slow text-gold" fill="none" stroke="currentColor" strokeWidth="2.4">
                   <path d="M12 3a9 9 0 1 0 9 9" />
                 </svg>
               </span>
-              <p className="font-bold text-gold">Checking video length…</p>
+              <p className="font-bold text-gold">Checking video metadata…</p>
             </>
           ) : (
             <>
@@ -277,9 +265,7 @@ function UploadZone({
                 DRAG YOUR VIDEO HERE <span className="text-gold">OR TAP TO BROWSE</span>
               </p>
               <p className="text-xs text-parch/60">
-                Accepted: <span className="text-parch">.mp4 · .mov</span> (also .webm / .m4v) — max{" "}
-                <span className="text-parch">1 GB</span>, max runtime{" "}
-                <span className="text-parch">2:00</span>
+                Accepted: <span className="text-parch">.mp4 · .mov</span> (also .webm / .m4v) — max <span className="text-parch">1 GB</span>, runtime flexible
               </p>
             </>
           )}
@@ -291,22 +277,17 @@ function UploadZone({
         type="file"
         accept=".mp4,.mov,.m4v,.webm,video/mp4,video/quicktime,video/webm,video/*"
         className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-          e.target.value = "";
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void handleFile(file);
+          event.target.value = "";
         }}
       />
 
       {video && (
         <div className="border-2 border-moss/70 bg-ink p-4">
           <div className="flex flex-col gap-4 sm:flex-row">
-            <video
-              src={video.url}
-              controls
-              preload="metadata"
-              className="max-h-44 w-full flex-none border border-line bg-black sm:w-64"
-            />
+            <video src={video.url} controls preload="metadata" className="max-h-44 w-full flex-none border border-line bg-black sm:w-64" />
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
                 <p className="truncate font-bold text-cream">{video.file.name}</p>
@@ -315,25 +296,20 @@ function UploadZone({
                   onClick={() => setVideo(null)}
                   className="flex-none border border-line px-2 py-1 text-[11px] font-bold tracking-wider text-parch transition-colors hover:border-ember hover:text-ember"
                 >
-                  REMOVE ✕
+                  REMOVE
                 </button>
               </div>
               <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-bold">
-                <span className="border border-line bg-coal px-2 py-1 text-parch">
-                  {video.sizeMB.toFixed(1)} MB
-                </span>
-                <span className="border border-line bg-coal px-2 py-1 text-parch">
-                  RUNTIME {fmtDuration(video.duration)}
-                </span>
+                <span className="border border-line bg-coal px-2 py-1 text-parch">{video.sizeMB.toFixed(1)} MB</span>
                 <span className="border border-moss bg-moss/10 px-2 py-1 text-moss">
-                  ✓ 2:00 COMPLIANT
+                  {video.duration !== null ? "RUNTIME " + fmtDuration(video.duration) : "RUNTIME NOT VERIFIED"}
                 </span>
-                {video.sizeMB > 50 && (
-                  <span className="border border-amber bg-amber/10 px-2 py-1 text-amber">
-                    ⚠ OVER 50MB — may need the link option
-                  </span>
-                )}
               </div>
+              {video.duration === null && (
+                <p className="mt-3 text-xs leading-relaxed text-amber">
+                  Runtime could not be read in this browser, but the upload can still continue.
+                </p>
+              )}
               <p className="mt-3 text-xs leading-relaxed text-parch/65">
                 On submit, this file uploads securely and is linked to your form reference code.
               </p>
@@ -346,7 +322,6 @@ function UploadZone({
     </div>
   );
 }
-
 /* ================= setup panel (Drive connect) ================= */
 
 /* ================= share my entry ================= */
@@ -664,7 +639,7 @@ export function Portal() {
       videoLink: form.videoLink.trim(),
       fileName: video?.file.name ?? "",
       fileSizeMB: video ? video.sizeMB.toFixed(1) : "",
-      duration: video ? fmtDuration(video.duration) : "",
+      duration: video?.duration ? fmtDuration(video.duration) : "",
     };
 
     setPhase("uploading");
@@ -904,50 +879,48 @@ export function Portal() {
                 </SectionCard>
 
                 {/* 02 — video */}
-                <SectionCard id="sec-video" num="02" title="VIDEO SUBMISSION" note="🎥 Max 2 minutes · must use the Eben soundtrack">
+                <SectionCard id="sec-video" num="02" title="VIDEO SUBMISSION" note="Runtime flexible · must use the Eben soundtrack">
                   <div className="space-y-5">
                     <UploadZone
                       video={video}
                       setVideo={setVideo}
                       error={errors.video}
                       onClearError={() =>
-                        setErrors((e) => {
-                          const n = { ...e };
-                          delete n.video;
-                          return n;
+                        setErrors((current) => {
+                          const next = { ...current };
+                          delete next.video;
+                          return next;
                         })
                       }
                     />
-                    <div className="border-2 border-dashed border-amber/60 bg-ink/60 p-4">
-                      <Label>VIDEO OVER 1 GB? UPLOAD TO DRIVE OR YOUTUBE, THEN PASTE THE LINK</Label>
-                      <input
-                        className={`field font-mono text-[13px] ${errors.videoLink ? "has-error" : ""}`}
-                        placeholder="https://drive.google.com/… or https://youtu.be/…"
-                        value={form.videoLink}
-                        onChange={(e) => {
-                          set("videoLink", e.target.value);
-                          if (e.target.value.trim())
-                            setErrors((er) => {
-                              const n = { ...er };
-                              delete n.video;
-                              return n;
-                            });
-                        }}
-                      />
-                      <Err msg={errors.videoLink} />
-                      <p className="mb-3 text-xs leading-relaxed text-amber/85">
-                        Direct uploads are limited to 1 GB. For larger videos, upload to Google Drive or YouTube Unlisted and paste the secure link here.
-                      </p>                      <p className="mt-2 text-xs leading-relaxed text-parch/55">
-                        No stress — upload the video to your own{" "}
-                        <span className="text-parch">Google Drive (share: “Anyone with the link”)</span>{" "}
-                        or <span className="text-parch">YouTube (Unlisted)</span>, then paste the share
-                        link above. A link counts exactly the same as a direct upload — but you must
-                        provide either a file or a link.
-                      </p>
-                    </div>
+                    <details className="border-2 border-dashed border-amber/60 bg-ink/60 p-4">
+                      <summary className="cursor-pointer list-none text-[12px] font-bold tracking-[0.14em] text-amber hover:text-gold">
+                        NEED TO SUBMIT A LINK INSTEAD?
+                      </summary>
+                      <div className="mt-4">
+                        <Label>VIDEO LINK OPTION</Label>
+                        <input
+                          className={"field font-mono text-[13px] " + (errors.videoLink ? "has-error" : "")}
+                          placeholder="https://drive.google.com/... or https://youtu.be/..."
+                          value={form.videoLink}
+                          onChange={(event) => {
+                            set("videoLink", event.target.value);
+                            if (event.target.value.trim())
+                              setErrors((current) => {
+                                const next = { ...current };
+                                delete next.video;
+                                return next;
+                              });
+                          }}
+                        />
+                        <Err msg={errors.videoLink} />
+                        <p className="mt-3 text-xs leading-relaxed text-parch/55">
+                          Use Google Drive or YouTube Unlisted for files over 1 GB, then paste the share link here.
+                        </p>
+                      </div>
+                    </details>
                   </div>
                 </SectionCard>
-
                 {/* 03 — guardian */}
                 <SectionCard id="sec-guardian" num="03" title="PARENT / GUARDIAN" note="👨‍👩‍👧 Required for participants under 18">
                   <div className="space-y-5">
