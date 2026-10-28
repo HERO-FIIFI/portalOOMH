@@ -213,29 +213,16 @@ export async function submitEntry(
     return { ok: false, error: error instanceof Error ? error.message : "The video upload failed." };
   }
 
-  return new Promise((resolve) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url);
-    xhr.upload.onprogress = (ev) => {
-      if (ev.lengthComputable) onProgress(file ? 96 + Math.round((ev.loaded / ev.total) * 4) : Math.round((ev.loaded / ev.total) * 100));
-    };
-    xhr.onload = () => {
-      onProgress(100);
-      try {
-        const data = JSON.parse(xhr.responseText || "{}");
-        if (data.ok) {
-          resolve({
-            ok: true,
-            videoUrl: typeof data.videoUrl === "string" && data.videoUrl.startsWith("http") ? data.videoUrl : undefined,
-          });
-        } else {
-          resolve({ ok: false, error: data.error || "Drive intake rejected the entry." });
-        }
-      } catch {
-        resolve({ ok: false, error: "Unexpected response from the intake script." });
-      }
-    };
-    xhr.onerror = () => resolve({ ok: false, error: "Network error — check your connection and try again." });
-    xhr.send(fd);
-  });
+  try {
+    await fetch(url, {
+      method: "POST",
+      body: fd,
+      mode: "no-cors",
+      credentials: "omit",
+    });
+    onProgress(100);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Network error — check your connection and try again." };
+  }
 }
