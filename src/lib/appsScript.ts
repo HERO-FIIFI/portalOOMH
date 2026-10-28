@@ -24,11 +24,41 @@ export const APPS_SCRIPT_CODE = `/** PRAYER HOUR — Oil On My Head Challenge ·
  *  2) Create a Google Sheet for entries, copy its ID from the URL.
  *  3) Paste both IDs below, Deploy → New deployment → Web app
  *     (Execute as: Me · Access: Anyone). Copy the /exec URL into the portal.
- *  4) Each participant gets an automatic confirmation email (MailApp). */
+ *  4) In Project Settings - Script properties, add SUPABASE_URL and
+ *     SUPABASE_SERVICE_ROLE_KEY so uploaded videos get a signed Sheet link.
+ *  5) Each participant gets an automatic confirmation email (MailApp). */
 
 var FOLDER_ID = "1y6KRCp7HWC0LkioCp2xMMCdtlPtyurRE";
 var SHEET_ID  = "1aNjy3jsHhFRer3pS_ubVgugwwM22C9dVTWVJ3b7VOPE";
 var RETENTION_DAYS = 365;
+var SUPABASE_BUCKET = "challenge-videos";
+var SIGNED_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+function createSupabaseSignedUrl_(objectPath) {
+  var properties = PropertiesService.getScriptProperties();
+  var supabaseUrl = (properties.getProperty("SUPABASE_URL") || "").replace(/\/$/, "");
+  var serviceRoleKey = properties.getProperty("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if (!supabaseUrl || !serviceRoleKey || !objectPath) return "";
+
+  var encodedPath = objectPath.split("/").map(encodeURIComponent).join("/");
+  var response = UrlFetchApp.fetch(
+    supabaseUrl + "/storage/v1/object/sign/" + encodeURIComponent(SUPABASE_BUCKET) + "/" + encodedPath,
+    {
+      method: "post",
+      contentType: "application/json",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: "Bearer " + serviceRoleKey
+      },
+      payload: JSON.stringify({ expiresIn: SIGNED_URL_TTL_SECONDS }),
+      muteHttpExceptions: true
+    }
+  );
+  if (response.getResponseCode() >= 300) return "";
+
+  var body = JSON.parse(response.getContentText() || "{}");
+  return body.signedURL ? supabaseUrl + "/storage/v1" + body.signedURL : "";
+}
 
 function escapeHtml_(value) {
   return String(value || "")
@@ -65,6 +95,12 @@ function doPost(e) {
     var stamp = new Date();
     var safeName = (p.leadName || "entry").replace(/[^a-z0-9]+/gi, "_");
     var videoUrl = p.videoLink || "";
+    var supabasePath = "";
+
+    if (videoUrl.indexOf("supabase://") === 0) {
+      supabasePath = videoUrl.slice("supabase://".length);
+      videoUrl = createSupabaseSignedUrl_(supabasePath);
+    }
 
     var fileBlob = e.parameters.videoFile && e.parameters.videoFile[0];
     if (fileBlob) {
@@ -79,7 +115,7 @@ function doPost(e) {
     var row = [
       stamp, p.refCode, p.entryType, p.leadName, p.phone, p.email,
       p.school, p.location, p.form, p.otherNames, p.ageGroup,
-      p.guardianName, p.guardianPhone, p.videoLink || "(file attached)", videoUrl
+      p.guardianName, p.guardianPhone, p.videoLink || "(file attached)", videoUrl || supabasePath
     ];
     sheet.getActiveSheet().appendRow(row);
 

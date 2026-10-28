@@ -340,7 +340,7 @@ function UploadZone({
                 )}
               </div>
               <p className="mt-3 text-xs leading-relaxed text-parch/65">
-                On submit, this file uploads directly into the Prayer Hour Google Drive folder.
+                On submit, this file uploads securely and is linked to your form reference code.
               </p>
             </div>
           </div>
@@ -449,7 +449,7 @@ function DriveConnectPanel() {
           {[
             ["1 · CREATE THE INTAKE", "In Google Drive make a folder for videos and a Sheet for entries. Open script.google.com, paste the script below, and put both IDs inside it."],
             ["2 · DEPLOY AS WEB APP", "Deploy → New deployment → Web app. Execute as “Me”, access “Anyone”. Copy the /exec URL it gives you."],
-            ["3 · PASTE THE URL HERE", "Save it below on any device that runs this portal. Every submission lands in your Drive folder + Sheet, and the script emails a confirmation to each participant automatically."],
+            ["3 · PASTE THE URL HERE", "Save it below on any device that runs this portal. Every submission lands in the Sheet with a matching private video link, and the script emails a confirmation to each participant automatically."],
           ].map(([t, b]) => (
             <li key={t} className="border-l-2 border-gold pl-4">
               <p className="display text-sm text-gold">{t}</p>
@@ -666,7 +666,7 @@ function SuccessScreen({
         YOU'RE IN, <span className="text-gold">{payload.leadName.split(" ")[0].toUpperCase() || "CHAMPION"}</span>!
       </p>
       <p className="mx-auto mt-4 max-w-xl leading-relaxed text-parch/85">
-        Your entry has been delivered to the Prayer Hour team and stored in their Google Drive.
+        Your entry has been delivered to the Prayer Hour team with its details linked to the submitted video.
         Keep your reference code safe — you'll need it for any enquiries.
       </p>
 
@@ -716,7 +716,7 @@ function SuccessScreen({
           rel="noreferrer"
           className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-moss underline decoration-2 underline-offset-4 transition-colors hover:text-cream"
         >
-          View your video in Google Drive
+          View your submitted video
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M2 10L10 2M10 2H4M10 2v6" />
           </svg>
@@ -916,8 +916,8 @@ export function Portal() {
               SUBMISSION <span className="text-gold">PORTAL</span>
             </h2>
             <p className="mt-3 max-w-xl text-parch/85">
-              Fill the form, attach your 2-minute video, and hit submit. Your entry is delivered
-              straight into the Prayer Hour Google Drive.
+              Fill the form, attach your 2-minute video, and hit submit. Your details and video are linked
+              by one reference code for the Prayer Hour team.
             </p>
           </div>
           <div className="flex items-center gap-2 border-2 border-line bg-ink px-4 py-2.5 text-xs font-bold tracking-wider text-parch">
@@ -925,7 +925,7 @@ export function Portal() {
               <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" />
               <path d="M12 12l8-4.5M12 12L4 7.5M12 12v9" />
             </svg>
-            SECURED BY GOOGLE DRIVE INTAKE
+            SECURED SUBMISSION INTAKE
           </div>
         </div>
 
@@ -1296,7 +1296,7 @@ export function Portal() {
                     </span>
                   </button>
                                     <p className="mt-3 text-center text-xs text-parch/55">
-                    Your video and details are delivered to the Prayer Hour team's Google Drive. Direct uploads are kept for up to 365 days, then removed by the organizers. Link submissions remain subject to the sharing settings of Google Drive or YouTube.
+                    Your details are saved with a private video link. Direct uploads are kept for up to 365 days, then removed by the organizers. Link submissions remain subject to the sharing settings of Google Drive or YouTube.
                   </p>
                 </div>
               </form>
