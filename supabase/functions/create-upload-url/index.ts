@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.98.0";
 
 const bucket = "challenge-videos";
 const allowedOrigins = new Set([
+  "https://portal.prayerhour.online",
   "https://portal-oomh.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",

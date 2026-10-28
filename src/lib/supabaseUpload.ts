@@ -11,7 +11,9 @@ async function getAnonymousAccessToken() {
 
   const signedIn = await supabase.auth.signInAnonymously();
   if (signedIn.error || !signedIn.data.session?.access_token) {
-    throw new Error("Could not start the secure upload session.");
+    throw new Error(
+      "Secure upload is temporarily unavailable. Please try again shortly or use the video link option.",
+    );
   }
   return signedIn.data.session.access_token;
 }
