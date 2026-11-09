@@ -5,7 +5,7 @@ import { supabase, supabaseKey, supabaseUrl, SUPABASE_BUCKET } from "./supabase"
 const CHUNK_SIZE = 6 * 1024 * 1024;
 
 
-async function getAnonymousAccessToken() {
+export async function getAnonymousAccessToken() {
   const current = await supabase.auth.getSession();
   if (current.data.session?.access_token) return current.data.session.access_token;
 

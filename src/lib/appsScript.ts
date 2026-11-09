@@ -1,4 +1,5 @@
 import { uploadVideoToSupabase } from "./supabaseUpload";
+import { recordSubmission } from "./submissions";
 
 /**
  * Google Drive submission bridge.
@@ -105,15 +106,22 @@ function doPost(e) {
       videoUrl = file.getUrl();
     }
 
-    var sheet = SpreadsheetApp.openById(SHEET_ID);
     var row = [
       stamp, p.refCode, p.entryType, p.leadName, p.phone, p.email,
       p.school, p.location, p.form, p.otherNames, p.ageGroup,
       p.guardianName, p.guardianPhone, p.videoLink || "(file attached)", videoUrl || supabasePath
     ];
-    sheet.getActiveSheet().appendRow(row);
+    var sheetSaved = false;
+    try {
+      var sheet = SpreadsheetApp.openById(SHEET_ID);
+      sheet.getActiveSheet().appendRow(row);
+      sheetSaved = true;
+    } catch (sheetErr) {
+      console.error("Sheet save failed", sheetErr);
+    }
 
     /* Confirmation email to the participant (fails silently — never blocks the entry). */
+    var emailSent = false;
     try {
       if (p.email) {
         var emailLeadName = escapeHtml_(p.leadName || "champion");
@@ -139,10 +147,11 @@ function doPost(e) {
             "<p>— The Prayer Hour Team</p>" +
             "</div>"
         });
+        emailSent = true;
       }
     } catch (mailErr) { /* keep the submission successful even if email fails */ }
 
-    return json_({ ok: true, refCode: p.refCode, videoUrl: videoUrl });
+    return json_({ ok: true, refCode: p.refCode, videoUrl: videoUrl, sheetSaved: sheetSaved, emailSent: emailSent });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
   }
@@ -205,12 +214,14 @@ export async function submitEntry(
   Object.entries(payload).forEach(([k, v]) => fd.append(k, v));
 
   try {
+    var objectName = "";
     if (file) {
-      const objectName = await uploadVideoToSupabase(file, payload.refCode, onProgress);
+      objectName = await uploadVideoToSupabase(file, payload.refCode, onProgress);
       fd.set("videoLink", `supabase://${objectName}`);
     }
+    await recordSubmission(payload, objectName || undefined);
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "The video upload failed." };
+    return { ok: false, error: error instanceof Error ? error.message : "The submission could not be saved." };
   }
 
   try {
